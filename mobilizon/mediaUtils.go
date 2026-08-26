@@ -109,7 +109,7 @@ func downloadFile(URL string) (string, error) {
 
 	//Get the response bytes from the url
 	client := &http.Client{}
-	req, err := http.NewRequest("GET", strings.Split(URL, "?")[0], nil)
+	req, err := http.NewRequest("GET", URL, nil)
 	if err != nil {
 		return "", err
 	}
