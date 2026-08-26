@@ -235,20 +235,21 @@ func (c *Client) UploadMediaFile(ctx context.Context, filepath string) (*uuid.UU
 func (c *Client) CreateEvent(
 	ctx context.Context,
 	params EventParams,
-) (*uuid.UUID, error) {
+) (*uuid.UUID, error, error) {
 
 	var picture *MediaInput = nil
+	var warn error
 
 	if params.ImageURL != "" {
 		var mi MediaInput
-		if path, err := downloadFile(params.ImageURL); err != nil {
-			return nil, errors.New("Error Downloading image: " + params.ImageURL + "error: " + err.Error())
-		} else {
-			if uuid, err := c.UploadMediaFile(ctx, path); err == nil {
+		var path string
+		if path, warn = downloadFile(params.ImageURL); warn == nil {
+			var uuid *uuid.UUID
+			if uuid, warn = c.UploadMediaFile(ctx, path); warn == nil {
 				mi.MediaUuid = uuid
 				picture = &mi
 			} else {
-				return nil, errors.New("Error uploading image: " + path)
+				return nil, nil, errors.New("Error uploading image: " + path)
 			}
 		}
 	}
@@ -279,24 +280,27 @@ func (c *Client) CreateEvent(
 		params.Contact,
 	)
 	if err != nil {
-		return nil, err
+		return nil, err, warn
 	}
 
-	return resp.CreateEvent.Uuid, nil
+	return resp.CreateEvent.Uuid, nil, warn
 }
 
 // UpdateEvent updates an event
 func (c *Client) UpdateEvent(
 	ctx context.Context,
 	params EventParams,
-) (*uuid.UUID, error) {
+) (*uuid.UUID, error, error) {
 
 	var picture *MediaInput = nil
+	var warn error
 
 	if params.ImageURL != "" {
 		var mi MediaInput
-		if path, err := downloadFile(params.ImageURL); err == nil {
-			if uuid, err := c.UploadMediaFile(ctx, path); err == nil {
+		var path string
+		if path, warn = downloadFile(params.ImageURL); warn == nil {
+			var uuid *uuid.UUID
+			if uuid, warn = c.UploadMediaFile(ctx, path); warn == nil {
 				mi.MediaUuid = uuid
 				picture = &mi
 			}
@@ -306,7 +310,7 @@ func (c *Client) UpdateEvent(
 	// get the existing event ID using the UUID
 	fre, err := FetchEvent(ctx, c.gqlClient, *params.UUID)
 	if err != nil {
-		return nil, err
+		return nil, err, nil
 	}
 
 	organizer := strconv.Itoa(params.OrganizerActorId)
@@ -337,10 +341,10 @@ func (c *Client) UpdateEvent(
 		params.Contact,
 	)
 	if err != nil {
-		return nil, err
+		return nil, err, nil
 	}
 
-	return resp.UpdateEvent.Uuid, nil
+	return resp.UpdateEvent.Uuid, nil, warn
 }
 
 // // CreateOrUpdateEvent creates an event if params.UUID is nil, otherwise updates it

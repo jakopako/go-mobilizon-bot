@@ -441,7 +441,7 @@ func createEvents(ctx context.Context, events []concertcloud.Event) {
 				Log.Debug("Update", "uuid", existingUuid)
 				Log.Trace("Update", "saved", spew.Sdump(existing[eventKey(e)].Event), "event", spew.Sdump(e))
 				vars.UUID = existingUuid
-				if _, err := mobClient.UpdateEvent(ctx, vars); err != nil {
+				if _, err, warn := mobClient.UpdateEvent(ctx, vars); err != nil {
 					Log.Error("Error updating event", "error", err)
 					// it could be a transient error, cache the cached version
 					// again so that we try to update again next time
@@ -450,6 +450,9 @@ func createEvents(ctx context.Context, events []concertcloud.Event) {
 					// cache the updated event
 					created[eventKey(e)] = ExistingEvent{*existingUuid, e}
 					Log.Info("Updated", "index", i, "URL", *opts.MobilizonUrl+"/events/"+existingUuid.String())
+					if warn != nil {
+						Log.Warn("Update completed with warnings.", "message", warn)
+					}
 				}
 				continue
 			} else {
@@ -460,10 +463,13 @@ func createEvents(ctx context.Context, events []concertcloud.Event) {
 
 		Log.Trace("Creating", "event", vars)
 
-		uuid, err := mobClient.CreateEvent(ctx, vars)
+		uuid, err, warn := mobClient.CreateEvent(ctx, vars)
 		if err == nil {
 			created[eventKey(e)] = ExistingEvent{*uuid, e}
 			Log.Info("Created", "index", i, "URL", *opts.MobilizonUrl+"/events/"+uuid.String())
+			if warn != nil {
+				Log.Warn("Creation completed with warnings.", "message", warn)
+			}
 		} else {
 			Log.Error("Error creating event", "error", err)
 		}
