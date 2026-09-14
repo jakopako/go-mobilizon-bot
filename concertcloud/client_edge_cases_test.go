@@ -224,15 +224,15 @@ func TestQueryParamsEdgeCases(t *testing.T) {
 		{
 			name: "only optional parameters",
 			params: QueryParams{
-				Radius: 100,
-				Date:   "2024-12-31",
+				Radius:   100,
+				FromTime: "2024-12-31T00:00:00Z",
 			},
 			checkQuery: func(t *testing.T, query string) {
 				if !contains(query, "radius=100") {
 					t.Error("Expected radius parameter")
 				}
-				if !contains(query, "date=2024-12-31") {
-					t.Error("Expected date parameter")
+				if !contains(query, "fromTime=2024-12-31T00%3A00%3A00Z") {
+					t.Error("Expected fromTime parameter")
 				}
 			},
 		},
